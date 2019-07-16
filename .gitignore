@@ -1,0 +1,14 @@
+# Compiled Object files, Static and Dynamic libs (Shared Objects)
+*.o
+*.a
+*.so
+
+vendor/*
+!vendor/vendor.json
+
+*.exe
+*.test
+*.prof
+
+# govendor cache
+.cache
