@@ -1,0 +1,13 @@
+---
+- name: Tasks
+  hosts: win
+  gather_facts: no
+  tasks:
+    - name: Creates Dir
+      shell: mkdir -p /etc/ansible/temp/{{inventory_hostname}}/Task_Config_Patch
+      delegate_to: localhost
+
+    - name: P_CheckSqlUpdate
+      script: /etc/ansible/scripts/PS/Config_Patch/P_CheckSQLUpdate.ps1
+      register: cfg1
+    - local_action: copy content="[{{ cfg1.stdout }}]" dest=/etc/ansible/temp/{{inventory_hostname}}/Task_Config_Patch/P_CheckSQLUpdate.json

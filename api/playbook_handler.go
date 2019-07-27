@@ -19,7 +19,7 @@ func FetchPlaybook(c echo.Context) error {
 	playbookList, err := db.GetAllPlaybook()
 	if err != nil {
 		logrus.Error(err)
-		return err
+		return c.JSON(http.StatusBadRequest, playbookList)
 	}
 	return c.JSON(http.StatusOK, playbookList)
 }
@@ -37,6 +37,8 @@ func UploadPlaybook(c echo.Context) error {
 	name := c.FormValue("name")
 	if name == "" {
 		name = file.Filename
+	} else {
+		name = name + ".yml"
 	}
 	description := c.FormValue("description")
 
@@ -82,11 +84,23 @@ func UpdatePlaybook(c echo.Context) error {
 }
 
 func RemovePlaybook(c echo.Context) error {
-	id := c.Param("id")
+	playbook := new(models.Playbook)
+	if err := c.Bind(playbook); err != nil {
+		logrus.Error(err)
+		return c.JSON(http.StatusBadRequest, err)
+	}
+	id := playbook.ID
+	location := playbook.Location
+	fmt.Println(location)
 	err := db.DeletePlaybook(id)
 	if err != nil {
 		logrus.Error(err)
-		return err
+		return c.JSON(http.StatusBadRequest, err)
+	}
+	err = os.Remove(location)
+	if err != nil {
+		logrus.Error(err)
+		return c.JSON(http.StatusBadRequest, err)
 	}
 	return c.NoContent(http.StatusNoContent)
 }

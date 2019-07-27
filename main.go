@@ -60,10 +60,10 @@ func main() {
 	e.Use(middleware.CORS())
 
 	// Integrate front end
-	/*
-		e.File("/", "frontend/build/index.html")
-		e.Use(middleware.Static("frontend/build"))
-	*/
+
+	e.File("/", "frontend/build/index.html")
+	e.Use(middleware.Static("frontend/build"))
+
 	e.POST("/login", api.Login)
 	// e.POST("/token", middlewares.RefreshToken)
 
@@ -71,19 +71,27 @@ func main() {
 	r := e.Group("/api")
 	r.Use(middlewares.IsLoggedIn)
 	r.GET("/private", api.Private)
+	// Playbook API
 	r.POST("/upload-playbook", api.UploadPlaybook)
 	r.GET("/fetch-playbook", api.FetchPlaybook)
-	r.DELETE("/delete-playbook/:id", api.RemovePlaybook)
+	r.DELETE("/delete-playbook", api.RemovePlaybook)
 
+	// User API
 	r.POST("/add-user", api.AddUser)
 	r.GET("/fetch-user", api.FetchUser)
 	r.DELETE("/remove-user/:id", api.RemoveUser)
 
+	// Host API
 	r.POST("/add-host", api.AddHost)
 	r.GET("/fetch-host", api.FetchHost)
 	r.DELETE("/remove-host/:id", api.RemoveHost)
 
-	r.POST("start-audit", api.StartAudit)
+	// Audit API
+	r.POST("/start-audit", api.StartAudit)
+
+	// Report API
+	r.GET("/fetch-report", api.FetchReport)
+	r.GET("/fetch-report-data", api.FetchReportData)
 
 	lock := make(chan error)
 	go func(lock chan error) { lock <- e.Start(serverAddress) }(lock)

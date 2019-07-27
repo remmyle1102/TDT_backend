@@ -53,7 +53,7 @@ func UpdatePlaybook(id, name, description string) error {
 	return err
 }
 
-func DeletePlaybook(id string) error {
+func DeletePlaybook(id int) error {
 	query := "DELETE FROM PlayBook WHERE id = @p1"
 	stmt, err := dbConn.Prepare(query)
 	if err != nil {

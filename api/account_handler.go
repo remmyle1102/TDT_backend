@@ -52,6 +52,7 @@ func Login(c echo.Context) error {
 
 }
 
+// RemoveUser handle remove user request
 func RemoveUser(c echo.Context) error {
 	id := c.Param("id")
 	err := db.DeleteUser(id)
@@ -62,6 +63,7 @@ func RemoveUser(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
+// FetchUser handle fetch user request
 func FetchUser(c echo.Context) error {
 	users := make([]*models.Account, 0)
 	users, err := db.GetAllUser()
@@ -72,6 +74,7 @@ func FetchUser(c echo.Context) error {
 	return c.JSON(http.StatusOK, users)
 }
 
+// AddUser handle add user request
 func AddUser(c echo.Context) error {
 	user := new(models.Account)
 	if err := c.Bind(user); err != nil {

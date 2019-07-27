@@ -10,6 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// AddHost handle add host request
 func AddHost(c echo.Context) error {
 	host := new(models.Host)
 	if err := c.Bind(host); err != nil {
@@ -31,6 +32,7 @@ func AddHost(c echo.Context) error {
 	return c.JSON(http.StatusOK, "Sucessful")
 }
 
+// RemoveHost handle remove user request
 func RemoveHost(c echo.Context) error {
 	id := c.Param("id")
 	err := db.DeleteHost(id)
@@ -41,12 +43,13 @@ func RemoveHost(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
+// FetchHost fetch all host
 func FetchHost(c echo.Context) error {
 	hosts := make([]*models.Host, 0)
 	hosts, err := db.GetAllHost()
 	if err != nil {
 		logrus.Error(err)
-		return err
+		return c.JSON(http.StatusBadRequest, err)
 	}
 	return c.JSON(http.StatusOK, hosts)
 }

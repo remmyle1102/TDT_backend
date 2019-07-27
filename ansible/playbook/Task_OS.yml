@@ -1,0 +1,28 @@
+---
+- name: Tasks
+  hosts: win
+  gather_facts: no
+  tasks:
+    - name: Creates Dir
+      shell: mkdir -p /etc/ansible/temp/{{inventory_hostname}}/Task_OS
+      delegate_to: localhost
+
+    - name: OS_List-Account
+      script: /etc/ansible/scripts/PS/OS/OS_GetUser.ps1
+      register: cfg
+    - local_action: copy content={{ cfg.stdout }} dest=/etc/ansible/temp/{{inventory_hostname}}/Task_OS/OS_GetUser.json
+
+    - name: OS_Guest-Enabled
+      script: /etc/ansible/scripts/PS/OS/OS_GuestCheck.ps1
+      register: cfg1
+    - local_action: copy content="[{{ cfg1.stdout }}]" dest=/etc/ansible/temp/{{inventory_hostname}}/Task_OS/OS_GuestCheck.json
+
+    - name: OS_SQL-Ports
+      script: /etc/ansible/scripts/PS/OS/OS_SQLPortsFW.ps1
+      register: cfg2
+    - local_action: copy content={{ cfg2.stdout }} dest=/etc/ansible/temp/{{inventory_hostname}}/Task_OS/OS_SQLPorts.json
+
+    - name: OS_SQL-Services
+      script: /etc/ansible/scripts/PS/OS/OS_SQLServices.ps1
+      register: cfg3
+    - local_action: copy content={{ cfg3.stdout }} dest=/etc/ansible/temp/{{inventory_hostname}}/Task_OS/OS_SQLServices.json
