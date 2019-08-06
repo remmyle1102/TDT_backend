@@ -59,11 +59,6 @@ func main() {
 	e.HTTPErrorHandler = middlewares.ErrorHandler
 	e.Use(middleware.CORS())
 
-	// Integrate front end
-
-	e.File("/", "frontend/build/index.html")
-	e.Use(middleware.Static("frontend/build"))
-
 	e.POST("/login", api.Login)
 	// e.POST("/token", middlewares.RefreshToken)
 

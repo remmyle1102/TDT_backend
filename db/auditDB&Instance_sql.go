@@ -3,12 +3,13 @@ package db
 import (
 	"TDT_backend/models"
 	"database/sql"
+	"fmt"
 
 	"github.com/sirupsen/logrus"
 )
 
 // AuditTaskDBInstance execute audit DB Instance query
-func AuditTaskDBInstance() (*models.AuditDBInstance, error) {
+func AuditTaskDBInstance(dbConn *sql.DB) (*models.AuditDBInstance, error) {
 
 	// Check SQL Server Audit level
 	// Field: AuditLevel
@@ -51,11 +52,15 @@ func AuditTaskDBInstance() (*models.AuditDBInstance, error) {
 	defer rows.Close()
 	for rows.Next() {
 		builtinCheck := new(models.BuiltinCheck)
-		err := rows.Scan(&builtinCheck.SrvRole, &builtinCheck.LoginName)
+		err := rows.Scan(&builtinCheck.ServerRole, &builtinCheck.LoginName)
 		if err != nil {
 			logrus.Error(err)
 		}
 		builtinCheckS = append(builtinCheckS, builtinCheck)
+	}
+	if len(builtinCheckS) == 0 {
+		builtinCheck := models.BuiltinCheck{LoginName: " ", ServerRole: " "}
+		builtinCheckS = append(builtinCheckS, &builtinCheck)
 	}
 
 	// Find members of the "Local Administrators" group on SQL Server
@@ -75,6 +80,10 @@ func AuditTaskDBInstance() (*models.AuditDBInstance, error) {
 			logrus.Error(err)
 		}
 		localMemAdminS = append(localMemAdminS, localMemAdmin)
+	}
+	if len(localMemAdminS) == 0 {
+		localMemAdmin := models.LocalMemAdmin{" ", " ", " ", " ", " "}
+		localMemAdminS = append(localMemAdminS, &localMemAdmin)
 	}
 
 	// -- Find Sysadmins server role's members (and other server level roles)
@@ -178,6 +187,10 @@ func AuditTaskDBInstance() (*models.AuditDBInstance, error) {
 		}
 		checkTestServiceS = append(checkTestServiceS, checkTestService)
 	}
+	if len(checkTestServiceS) == 0 {
+		checkTestService := models.CheckTestService{" "}
+		checkTestServiceS = append(checkTestServiceS, &checkTestService)
+	}
 
 	// -- check whether the sa password exists and if it does if the password policy is turned on for this login
 	// -- field: name, Renamed, is_policy_checked, is_expiration_checked, is_disable
@@ -205,7 +218,7 @@ func AuditTaskDBInstance() (*models.AuditDBInstance, error) {
 	// -- field: name, value_in_use, description
 	configCheckS := make([]*models.ConfigCheck, 0)
 	query = `SELECT name, value_in_use, description FROM sys.configurations
-	WHERE configuration_id IN (16391, 102, 400, 1562, 16386, 16385, 16390, 16393)`
+	WHERE configuration_id IN (102, 117,400, 1547, 1562, 16385, 16386, 16388, 16390, 16391, 16393)`
 	rows, err = dbConn.Query(query)
 	if err != nil {
 		logrus.Error(err)
@@ -215,6 +228,7 @@ func AuditTaskDBInstance() (*models.AuditDBInstance, error) {
 		configCheck := new(models.ConfigCheck)
 		err := rows.Scan(&configCheck.Name, &configCheck.ValueInUse, &configCheck.Description)
 		if err != nil {
+			fmt.Println("hello")
 			logrus.Error(err)
 		}
 		configCheckS = append(configCheckS, configCheck)
@@ -422,7 +436,7 @@ func AuditTaskDBInstance() (*models.AuditDBInstance, error) {
 	defer rows.Close()
 	for rows.Next() {
 		orphanedUser := new(models.OrphanedUser)
-		err := rows.Scan(&orphanedUser.DB, &orphanedUser.Username, &orphanedUser.TypeDesc)
+		err := rows.Scan(&orphanedUser.DB, &orphanedUser.Username, &orphanedUser.TypeDesc, &orphanedUser.Type)
 		if err != nil {
 			logrus.Error(err)
 		}
@@ -486,6 +500,10 @@ func AuditTaskDBInstance() (*models.AuditDBInstance, error) {
 			logrus.Error(err)
 		}
 		noPermLoginS = append(noPermLoginS, noPermLogin)
+	}
+	if len(noPermLoginS) == 0 {
+		noPermLogin := models.NoPermLogin{" ", " ", false, " ", " "}
+		noPermLoginS = append(noPermLoginS, &noPermLogin)
 	}
 
 	result := &models.AuditDBInstance{auditLevelS, builtinCheckS, localMemAdminS, sysAdMemS, ownerMemS, loginMappingS, policyUserCheckS, checkTestServiceS, policySACheckS, configCheckS, guestPerCheckS, serverAuthenticationCheckS, sqlInfoCheckS, dbUserS, dbPermS, roleMembershipS, connectionInfoS, sqlServiceStartupS, linkedSvrLoginS, orphanedUserS, noPermLoginS}

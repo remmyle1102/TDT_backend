@@ -11,3 +11,8 @@
       script: /etc/ansible/scripts/PS/Config_Patch/P_CheckSQLUpdate.ps1
       register: cfg1
     - local_action: copy content="[{{ cfg1.stdout }}]" dest=/etc/ansible/temp/{{inventory_hostname}}/Task_Config_Patch/P_CheckSQLUpdate.json
+
+    - name: P_CheckWinSecUpdate
+      script: /etc/ansible/scripts/PS/Config_Patch/P_CheckWinSecurityUpdate.ps1
+      register: cfg2
+    - local_action: copy content="[{{ cfg2.stdout }}]" dest=/etc/ansible/temp/{{inventory_hostname}}/Task_Config_Patch/P_CheckWinSecUpdate.json

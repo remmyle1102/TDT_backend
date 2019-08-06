@@ -25,57 +25,110 @@ func FetchReport(c echo.Context) error {
 }
 
 func FetchReportData(c echo.Context) error {
-	result := make([]*models.ReportData, 0)
+	result := make([]*models.ReportTableData, 0)
 	location := c.QueryParam("location")
-	folders, err := app.ListDirOrFile(location, 1)
+
+	hosts, err := app.ListDirOrFile(location, 1)
 	if err != nil {
 		logrus.Error(err)
 		return c.JSON(http.StatusBadRequest, err)
 	}
-	for _, folder := range folders {
-		folderLocation := fmt.Sprintf("%s/%s", location, folder)
-		reportData := new(models.ReportData)
-		files, err := app.ListDirOrFile(folderLocation, 2)
+
+	// add ReportTableData
+	for _, host := range hosts {
+		reportTableData := new(models.ReportTableData)
+		reportDataS := make([]*models.ReportData, 0)
+		hostLocation := fmt.Sprintf("%s/%s", location, host)
+		folders, err := app.ListDirOrFile(hostLocation, 1)
 		if err != nil {
 			logrus.Error(err)
 			return c.JSON(http.StatusBadRequest, err)
 		}
-		for _, file := range files {
-			fileLocation := fmt.Sprintf("%s/%s", folderLocation, file)
-			jsonFile, err := os.Open(fileLocation)
+		for _, folder := range folders {
+			reportData := new(models.ReportData)
+
+			if folder == "Task_Instance_DB" || folder == "Task_OS" {
+				// add Report Table suggestions
+				suggestionFile, err := os.Open("/etc/ansible/suggestions/" + folder + ".json")
+				if err != nil {
+					logrus.Error(err)
+				}
+				defer suggestionFile.Close()
+				byteValue, err := ioutil.ReadAll(suggestionFile)
+				if err != nil {
+					logrus.Error(err)
+				}
+				err = json.Unmarshal(byteValue, &reportData.TableSuggestion)
+				if err != nil {
+					logrus.Error(err)
+					return c.JSON(http.StatusInternalServerError, err)
+				}
+
+				// add checkError
+				checkErrorFile, err := os.Open("/etc/ansible/checkErrors/" + folder + ".json")
+				if err != nil {
+					logrus.Error(err)
+				}
+				defer checkErrorFile.Close()
+				byteValue, err = ioutil.ReadAll(checkErrorFile)
+				if err != nil {
+					logrus.Error(err)
+				}
+				err = json.Unmarshal(byteValue, &reportData.CheckError)
+				if err != nil {
+					logrus.Error(err)
+					return c.JSON(http.StatusInternalServerError, err)
+				}
+			}
+
+			folderLocation := fmt.Sprintf("%s/%s", hostLocation, folder)
+
+			files, err := app.ListDirOrFile(folderLocation, 2)
 			if err != nil {
 				logrus.Error(err)
 				return c.JSON(http.StatusBadRequest, err)
 			}
-			defer jsonFile.Close()
-			byteValue, err := ioutil.ReadAll(jsonFile)
-			if err != nil {
-				logrus.Error(err)
-				return c.JSON(http.StatusInternalServerError, err)
-			}
-
-			if file == "Task_Instance_DB.json" {
-				err = json.Unmarshal([]byte(byteValue), &reportData.DBTaskData)
+			for _, file := range files {
+				fileLocation := fmt.Sprintf("%s/%s", folderLocation, file)
+				jsonFile, err := os.Open(fileLocation)
+				if err != nil {
+					logrus.Error(err)
+					return c.JSON(http.StatusBadRequest, err)
+				}
+				defer jsonFile.Close()
+				byteValue, err := ioutil.ReadAll(jsonFile)
 				if err != nil {
 					logrus.Error(err)
 					return c.JSON(http.StatusInternalServerError, err)
 				}
 
-			} else {
-				var fileData models.FileData
-				err = json.Unmarshal([]byte(byteValue), &fileData.FileData)
-				if err != nil {
-					logrus.Error(err)
-					return c.JSON(http.StatusInternalServerError, err)
+				if file == "Task_Instance_DB.json" {
+					err = json.Unmarshal(byteValue, &reportData.DBTaskData)
+					if err != nil {
+						logrus.Error(err)
+						return c.JSON(http.StatusInternalServerError, err)
+					}
+
+				} else {
+					var fileData models.FileData
+					err = json.Unmarshal(byteValue, &fileData.FileData)
+					if err != nil {
+						logrus.Error(err)
+						return c.JSON(http.StatusInternalServerError, err)
+					}
+					reportData.FileData = append(reportData.FileData, fileData)
 				}
-				reportData.FileData = append(reportData.FileData, fileData)
+
 			}
 
+			reportData.File = files
+			reportData.Folder = folder
+			reportDataS = append(reportDataS, reportData)
 		}
-
-		reportData.File = files
-		reportData.Folder = folder
-		result = append(result, reportData)
+		reportTableData.Host = host
+		reportTableData.ReportData = reportDataS
+		result = append(result, reportTableData)
 	}
+
 	return c.JSON(http.StatusOK, result)
 }

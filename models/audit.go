@@ -176,8 +176,8 @@ type AuditLevel struct {
 }
 
 type BuiltinCheck struct {
-	SrvRole   string
-	LoginName NullString
+	ServerRole string
+	LoginName  string
 }
 type LocalMemAdmin struct {
 	AccountName     string
@@ -303,6 +303,7 @@ type OrphanedUser struct {
 	DB       string
 	Username string
 	TypeDesc string
+	Type     string
 }
 
 type NoPermLogin struct {
