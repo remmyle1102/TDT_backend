@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"TDT_backend/models"
+	"net/http"
 	"time"
 
 	"github.com/spf13/viper"
@@ -108,4 +109,11 @@ func IsAdmin(next echo.HandlerFunc) echo.HandlerFunc {
 
 		return next(c)
 	}
+}
+
+func IsAdminOrNot(c echo.Context) error {
+	user := c.Get("user").(*jwt.Token)
+	claims := user.Claims.(jwt.MapClaims)
+	IsAdmin := claims["role"]
+	return c.JSON(http.StatusOK, IsAdmin)
 }

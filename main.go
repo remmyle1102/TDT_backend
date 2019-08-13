@@ -66,10 +66,14 @@ func main() {
 	r := e.Group("/api")
 	r.Use(middlewares.IsLoggedIn)
 	r.GET("/private", api.Private)
+	r.GET("/is-admin", middlewares.IsAdminOrNot)
+
 	// Playbook API
 	r.POST("/upload-playbook", api.UploadPlaybook)
 	r.GET("/fetch-playbook", api.FetchPlaybook)
 	r.DELETE("/delete-playbook", api.RemovePlaybook)
+	r.GET("/view-playbook", api.ViewPlaybook)
+	r.POST("/create-playbook", api.CreatePlaybook)
 
 	// User API
 	r.POST("/add-user", api.AddUser)
@@ -92,7 +96,7 @@ func main() {
 	go func(lock chan error) { lock <- e.Start(serverAddress) }(lock)
 
 	time.Sleep(1 * time.Millisecond)
-	middlewares.MakeLogEntry(nil).Warning("application started without ssl/tls enabled")
+	middlewares.MakeLogEntry(nil)
 
 	err = <-lock
 	if err != nil {

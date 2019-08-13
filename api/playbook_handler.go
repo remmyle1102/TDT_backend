@@ -5,6 +5,7 @@ import (
 	"TDT_backend/models"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 
@@ -70,6 +71,54 @@ func UploadPlaybook(c echo.Context) error {
 	return c.JSON(http.StatusOK, "Successful")
 }
 
+func CreatePlaybook(c echo.Context) error {
+	playbookTemplate := new(models.PlaybookTemplate)
+	user := c.Get("user").(*jwt.Token)
+	claims := user.Claims.(jwt.MapClaims)
+	addBy := claims["userID"].(float64)
+	if err := c.Bind(playbookTemplate); err != nil {
+		logrus.Error(err)
+		return c.JSON(http.StatusBadRequest, err)
+	}
+	name := playbookTemplate.Name
+	description := playbookTemplate.Description
+	subTasks := playbookTemplate.SubTasks
+
+	// Create yml file
+	location := fmt.Sprintf("ansible/playbook/%s.yml", name)
+	playbookFile, err := os.Create(location)
+	if err != nil {
+		logrus.Error(err)
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+	defer playbookFile.Close()
+	if _, err := playbookFile.WriteString("---\n- name: " + name + "\n  hosts: win\n  gather_facts: no\n  tasks:\n"); err != nil {
+		logrus.Error(err)
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+	if _, err := playbookFile.WriteString("    - name: Creates Dir\n      shell: mkdir -p /etc/ansible/temp/{{inventory_hostname}}/" + name + "\n      delegate_to: localhost\n\n"); err != nil {
+		logrus.Error(err)
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+
+	for idx, subTask := range subTasks {
+		subTaskScript := fmt.Sprintf("    - name: %s\n      script: /etc/ansible/scripts/PS/%s\n      register: cfg%d\n    - local_action: copy content=\"[{{ cfg%d.stdout }}]\" dest=/etc/ansible/temp/{{inventory_hostname}}/%s/%s.json\n\n", subTask["subTaskName"], subTask["scriptLocation"], idx, idx, name, subTask["subTaskName"])
+		if _, err := playbookFile.WriteString(subTaskScript); err != nil {
+			logrus.Error(err)
+			return c.JSON(http.StatusInternalServerError, err)
+		}
+	}
+
+	err = db.InsertPlaybook(name, description, location, int(addBy))
+	if err != nil {
+		logrus.Error(err)
+		return c.JSON(http.StatusBadRequest, err)
+	}
+
+	return c.JSON(http.StatusOK, "Successful")
+
+}
+
 func UpdatePlaybook(c echo.Context) error {
 	id := c.FormValue("id")
 	name := c.FormValue("name")
@@ -81,6 +130,18 @@ func UpdatePlaybook(c echo.Context) error {
 		return err
 	}
 	return c.JSON(http.StatusOK, nil)
+}
+
+func ViewPlaybook(c echo.Context) error {
+	location := c.FormValue("location")
+	playbookContent := new(models.PlaybookContent)
+	byteValue, err := ioutil.ReadFile(location)
+	if err != nil {
+		logrus.Error(err)
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+	playbookContent.PlaybookContent = string(byteValue)
+	return c.JSON(http.StatusOK, playbookContent)
 }
 
 func RemovePlaybook(c echo.Context) error {

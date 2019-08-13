@@ -1,0 +1,1 @@
+Get-WmiObject -class win32_quickfixengineering | Select -Property Description, HotFixID, @{Name="InstalledOn";Expression={$_.InstalledOn.DateTime}} | ConvertTo-Json -Depth 2

@@ -41,7 +41,7 @@ func StartAudit(c echo.Context) error {
 		conn, err := net.Dial("tcp", host)
 		if err != nil {
 			logrus.Error(err)
-			return c.JSON(http.StatusGatewayTimeout, err)
+			return c.JSON(http.StatusRequestTimeout, "Can't connect to "+host)
 		}
 		conn.Close()
 		ipAddr := strings.Split(host, ":")
@@ -61,13 +61,6 @@ func StartAudit(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 	for _, host := range hostList {
-		// create report folder name ip
-		err := app.CreateDirIfNotExist("/etc/ansible/temp/" + host)
-		if err != nil {
-			logrus.Error(err)
-			return c.JSON(http.StatusBadRequest, err)
-		}
-
 		if _, err = f.WriteString(host + "\n"); err != nil {
 			logrus.Error(err)
 			return c.JSON(http.StatusBadRequest, err)
@@ -91,6 +84,7 @@ func StartAudit(c echo.Context) error {
 				dbConn, err := sql.Open("sqlserver", connection)
 				if err != nil {
 					logrus.Error(err)
+					return echo.NewHTTPError(http.StatusInternalServerError, "Can't connect to "+host)
 				}
 				defer func() {
 					err := dbConn.Close()
