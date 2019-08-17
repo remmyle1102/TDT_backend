@@ -116,7 +116,6 @@ func CreatePlaybook(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, "Successful")
-
 }
 
 func UpdatePlaybook(c echo.Context) error {

@@ -1,9 +1,9 @@
 package api
 
 import (
-	"TDT_backend/app"
 	"TDT_backend/db"
 	"TDT_backend/models"
+	"TDT_backend/utils"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -93,7 +93,7 @@ func StartAudit(c echo.Context) error {
 					}
 				}()
 
-				err = app.CreateDirIfNotExist("/etc/ansible/temp/" + host + "/Task_Instance_DB")
+				err = utils.CreateDirIfNotExist("/etc/ansible/temp/" + host + "/Task_Instance_DB")
 				if err != nil {
 					logrus.Error(err)
 					return c.JSON(http.StatusBadRequest, err)
@@ -126,12 +126,12 @@ func StartAudit(c echo.Context) error {
 	}
 
 	// Move created report to task name folder
-	folders, err := app.ListDirOrFile("/etc/ansible/temp/", 1)
+	folders, err := utils.ListDirOrFile("/etc/ansible/temp/", 1)
 	if err != nil {
 		logrus.Error(err)
 		return c.JSON(http.StatusInternalServerError, err)
 	}
-	err = app.CreateDirIfNotExist("/etc/ansible/reports/" + audit.TaskName)
+	err = utils.CreateDirIfNotExist("/etc/ansible/reports/" + audit.TaskName)
 	if err != nil {
 		logrus.Error(err)
 		return c.JSON(http.StatusBadRequest, err)

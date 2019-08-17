@@ -11,16 +11,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
 )
-
-func Private(c echo.Context) error {
-	user := c.Get("user").(*jwt.Token)
-	claims := user.Claims.(jwt.MapClaims)
-	name := claims["userName"].(string)
-	return c.String(http.StatusOK, "Welcome "+name+"!")
-}
 
 // Login validate user then create JWT
 func Login(c echo.Context) error {

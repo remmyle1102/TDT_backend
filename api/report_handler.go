@@ -1,9 +1,9 @@
 package api
 
 import (
-	"TDT_backend/app"
 	"TDT_backend/db"
 	"TDT_backend/models"
+	"TDT_backend/utils"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -28,7 +28,7 @@ func FetchReportData(c echo.Context) error {
 	result := make([]*models.ReportTableData, 0)
 	location := c.QueryParam("location")
 
-	hosts, err := app.ListDirOrFile(location, 1)
+	hosts, err := utils.ListDirOrFile(location, 1)
 	if err != nil {
 		logrus.Error(err)
 		return c.JSON(http.StatusBadRequest, err)
@@ -39,7 +39,7 @@ func FetchReportData(c echo.Context) error {
 		reportTableData := new(models.ReportTableData)
 		reportDataS := make([]*models.ReportData, 0)
 		hostLocation := fmt.Sprintf("%s/%s", location, host)
-		folders, err := app.ListDirOrFile(hostLocation, 1)
+		folders, err := utils.ListDirOrFile(hostLocation, 1)
 		if err != nil {
 			logrus.Error(err)
 			return c.JSON(http.StatusBadRequest, err)
@@ -83,7 +83,7 @@ func FetchReportData(c echo.Context) error {
 
 			folderLocation := fmt.Sprintf("%s/%s", hostLocation, folder)
 
-			files, err := app.ListDirOrFile(folderLocation, 2)
+			files, err := utils.ListDirOrFile(folderLocation, 2)
 			if err != nil {
 				logrus.Error(err)
 				return c.JSON(http.StatusBadRequest, err)
